@@ -51,7 +51,37 @@ export default async function RootLayout({
         className={`${ringsideCompressed.variable} ${ringsideNarrow.variable} antialiased`}
       >
         <NextIntlClientProvider>
-          {children}
+          <div className="min-h-screen flex flex-col">
+            {/* Navbar Section */}
+            <header className="bg-gray-800 text-white p-4">
+              <nav className="container mx-auto">
+                <div className="flex items-center justify-between">
+                  <div className="text-xl font-bold">
+                    Dummy Navbar
+                  </div>
+                  <div className="space-x-4">
+                    <a href="#" className="hover:text-gray-300">Home</a>
+                    <a href="#" className="hover:text-gray-300">About</a>
+                    <a href="#" className="hover:text-gray-300">Contact</a>
+                  </div>
+                </div>
+              </nav>
+            </header>
+
+            {/* Main Section - Takes maximum height */}
+            <main className="flex-1 bg-gray-50">
+              {children}
+            </main>
+
+            {/* Footer Section */}
+            <footer className="bg-gray-900 text-white p-6">
+              <div className="container mx-auto">
+                <div className="text-center">
+                  <p>&copy; 2024 Dummy Footer. All rights reserved.</p>
+                </div>
+              </div>
+            </footer>
+          </div>
         </NextIntlClientProvider>
         </body>
     </html>
