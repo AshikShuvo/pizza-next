@@ -1,7 +1,7 @@
 export default function ThemePage() {
   return (
-    <main className="p-8 space-y-8">
-      <h1 className="text-4xl font-bold mb-8">Font Theme Examples</h1>
+    <main className="container-responsive space-responsive-y">
+      <h1 className="text-responsive-4xl font-bold font-ringside-compressed-bold">Font Theme Examples</h1>
       
       {/* Ringside Compressed Examples */}
       <section className="space-y-4">
@@ -276,13 +276,90 @@ export default function ThemePage() {
         </div>
       </section>
 
+      {/* Responsive Design Examples */}
+      <section className="space-y-6 p-6 bg-blue-50 rounded-lg">
+        <h2 className="text-responsive-2xl font-semibold font-ringside-compressed-bold">Responsive Design Examples</h2>
+        
+        {/* Responsive Typography Demo */}
+        <div className="space-y-4">
+          <h3 className="text-responsive-xl font-medium">Responsive Typography</h3>
+          <div className="space-y-2">
+            <p className="text-responsive-xs font-ringside-narrow">Extra Small Text - Scales with screen size</p>
+            <p className="text-responsive-sm font-ringside-narrow">Small Text - Responsive sizing</p>
+            <p className="text-responsive-base font-ringside-narrow">Base Text - Mobile first approach</p>
+            <p className="text-responsive-lg font-ringside-narrow">Large Text - Adaptive typography</p>
+            <p className="text-responsive-xl font-ringside-narrow">Extra Large Text - Responsive design</p>
+          </div>
+        </div>
+
+        {/* Responsive Grid Demo */}
+        <div className="space-y-4">
+          <h3 className="text-responsive-xl font-medium">Responsive Grid Layout</h3>
+          <div className="grid-responsive">
+            <div className="p-4 bg-peppes-red text-white rounded">Grid Item 1</div>
+            <div className="p-4 bg-glowing-red text-white rounded">Grid Item 2</div>
+            <div className="p-4 bg-coal text-white rounded">Grid Item 3</div>
+            <div className="p-4 bg-peppes-red text-white rounded">Grid Item 4</div>
+            <div className="p-4 bg-glowing-red text-white rounded">Grid Item 5</div>
+          </div>
+        </div>
+
+        {/* Responsive Flexbox Demo */}
+        <div className="space-y-4">
+          <h3 className="text-responsive-xl font-medium">Responsive Flexbox Layout</h3>
+          <div className="flex-responsive">
+            <div className="flex-1 p-4 bg-light-bg border border-coal rounded">Flex Item 1</div>
+            <div className="flex-1 p-4 bg-light-bg border border-coal rounded">Flex Item 2</div>
+            <div className="flex-1 p-4 bg-light-bg border border-coal rounded">Flex Item 3</div>
+          </div>
+        </div>
+      </section>
+
       {/* Usage Instructions */}
       <section className="space-y-4 p-6 bg-gray-100 rounded-lg">
-        <h2 className="text-2xl font-semibold">How to Use These Fonts</h2>
+        <h2 className="text-responsive-2xl font-semibold font-ringside-compressed-bold">How to Use These Fonts</h2>
         <div className="space-y-2 text-sm">
           <p><strong>CSS Classes:</strong> Use classes like <code>font-ringside-compressed</code> or <code>font-ringside-narrow</code></p>
           <p><strong>CSS Variables:</strong> Use <code>var(--font-ringside-compressed)</code> or <code>var(--font-ringside-narrow)</code></p>
           <p><strong>Inline Styles:</strong> Use <code>style=&#123;&#123;fontFamily: &apos;var(--font-ringside-compressed)&apos;&#125;&#125;</code></p>
+        </div>
+      </section>
+
+      {/* Responsive Utilities Usage */}
+      <section className="space-y-4 p-6 bg-green-50 rounded-lg">
+        <h2 className="text-responsive-2xl font-semibold font-ringside-compressed-bold">Responsive Utilities Usage</h2>
+        <div className="space-y-4 text-sm">
+          <div>
+            <h3 className="font-semibold mb-2">Typography Classes:</h3>
+            <ul className="space-y-1 ml-4">
+              <li><code>.text-responsive-xs</code> - Extra small responsive text</li>
+              <li><code>.text-responsive-sm</code> - Small responsive text</li>
+              <li><code>.text-responsive-base</code> - Base responsive text</li>
+              <li><code>.text-responsive-lg</code> - Large responsive text</li>
+              <li><code>.text-responsive-xl</code> - Extra large responsive text</li>
+              <li><code>.text-responsive-2xl</code> - 2X large responsive text</li>
+              <li><code>.text-responsive-3xl</code> - 3X large responsive text</li>
+              <li><code>.text-responsive-4xl</code> - 4X large responsive text</li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="font-semibold mb-2">Layout Classes:</h3>
+            <ul className="space-y-1 ml-4">
+              <li><code>.container-responsive</code> - Responsive container with max-widths</li>
+              <li><code>.grid-responsive</code> - Responsive grid (1 col mobile, 2+ desktop)</li>
+              <li><code>.flex-responsive</code> - Responsive flexbox (column mobile, row desktop)</li>
+              <li><code>.space-responsive-y</code> - Responsive vertical spacing</li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="font-semibold mb-2">Image Classes:</h3>
+            <ul className="space-y-1 ml-4">
+              <li><code>.img-responsive</code> - Basic responsive image</li>
+              <li><code>.img-responsive-square</code> - Square aspect ratio</li>
+              <li><code>.img-responsive-16-9</code> - 16:9 aspect ratio</li>
+              <li><code>.img-responsive-4-3</code> - 4:3 aspect ratio</li>
+            </ul>
+          </div>
         </div>
       </section>
 
