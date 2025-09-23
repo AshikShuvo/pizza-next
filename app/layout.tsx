@@ -3,7 +3,7 @@ import { ringsideCompressed, ringsideNarrow } from "./fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Peppes Next",
+  title: "Peppes Pizza",
   description: "Peppes Next.js application with responsive design",
   viewport: "width=device-width, initial-scale=1",
 };
