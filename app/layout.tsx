@@ -1,25 +1,11 @@
-import type { Metadata } from "next";
-import { ringsideCompressed, ringsideNarrow } from "./fonts";
-import "./globals.css";
+import {ReactNode} from 'react';
 
-export const metadata: Metadata = {
-  title: "Peppes Pizza",
-  description: "Peppes Next.js application with responsive design",
-  viewport: "width=device-width, initial-scale=1",
+type Props = {
+  children: ReactNode;
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html lang="en">
-      <body
-        className={`${ringsideCompressed.variable} ${ringsideNarrow.variable} antialiased`}
-      >
-        {children}
-      </body>
-    </html>
-  );
+// Since we have a `not-found.tsx` page on the root, a layout file
+// is required, even if it's just passing children through.
+export default function RootLayout({children}: Props) {
+  return children;
 }
