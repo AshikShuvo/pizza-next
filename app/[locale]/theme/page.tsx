@@ -1,7 +1,17 @@
+import {Link} from '../../../i18n/navigation';
+
 export default function ThemePage() {
   return (
     <main className="container-responsive space-responsive-y">
-      <h1 className="text-responsive-4xl font-bold font-ringside-compressed-bold">Font Theme Examples</h1>
+      <div className="mb-6">
+        <Link 
+          href="/" 
+          className="inline-block bg-gray-600 hover:bg-gray-700 text-white font-ringside-compressed-medium px-4 py-2 rounded-lg transition-colors duration-200 mb-4"
+        >
+          ← Back to Home
+        </Link>
+        <h1 className="text-responsive-4xl font-bold font-ringside-compressed-bold">Font Theme Examples</h1>
+      </div>
       
       {/* Ringside Compressed Examples */}
       <section className="space-y-4">

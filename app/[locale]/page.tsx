@@ -1,7 +1,7 @@
 import {Locale, useTranslations} from 'next-intl';
 import {setRequestLocale} from 'next-intl/server';
 import {use} from 'react';
-import Link from 'next/link';
+import {Link} from '../../i18n/navigation';
 
 // Define the page props type
 type PageProps = {
