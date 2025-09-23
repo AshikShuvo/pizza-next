@@ -2,6 +2,47 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Peppes Red Colors */
+  --Peppes-Red: #cd1719;
+  --peppes-80: rgba(205, 23, 26, 0.8);
+  --peppes-60: rgba(205, 23, 26, 0.6);
+  --peppes-40: rgba(205, 23, 26, 0.4);
+  --peppes-20: rgba(205, 23, 26, 0.2);
+  --peppes-10: rgba(205, 23, 26, 0.1);
+  --peppes-red-20-black: rgba(205, 23, 26, 0.8);
+  --peppes-red-40-black: rgba(205, 23, 26, 0.6);
+  --peppes-red-60-black: rgba(205, 23, 26, 0.4);
+  --peppes-red-80-black: rgba(205, 23, 26, 0.2);
+
+  /* Glowing Red Colors */
+  --Glowing-Red: #ee1d25;
+  --glowing-red-80: rgba(238, 29, 37, 0.8);
+  --glowing-red-60: rgba(238, 29, 37, 0.6);
+  --glowing-red-40: rgba(238, 29, 37, 0.4);
+  --glowing-red-20: rgba(238, 29, 37, 0.2);
+  --glowing-red-10: rgba(238, 29, 37, 0.1);
+
+  /* Coal Colors */
+  --Coal: #323232;
+  --coal-80: rgba(50, 50, 50, 0.8);
+  --coal-60: rgba(50, 50, 50, 0.6);
+  --Invisible-White: rgba(50, 50, 50, 0.2);
+  --coal-10: rgba(50, 50, 50, 0.05);
+
+  /* Base Colors */
+  --Light-BG: #fffdf9;
+  --Pure-Black: #000;
+  --White: #fff;
+
+  /* Additional Brand Colors */
+  --Peppes-Lyserosa: rgba(248, 246, 241, 1);
+  --Neutral-neutral90: #F8F6F1;
+  --secondary-secondary-main-95: rgba(252, 241, 241, 1);
+  --Neutral-Black---neutral0: rgba(0, 0, 0, 1);
+  --Neutral-neutral20: #33322f;
+  --Neutral-neutral30: rgba(86, 85, 81, 1);
+  --primary-primary-main-40: rgba(205, 23, 25, 1);
 }
 
 /* Theme variables for Tailwind */
@@ -10,4 +51,12 @@
   --color-foreground: var(--foreground);
   --font-ringside-compressed: var(--font-ringside-compressed);
   --font-ringside-narrow: var(--font-ringside-narrow);
+  
+  /* Brand Colors for Tailwind */
+  --color-peppes-red: var(--Peppes-Red);
+  --color-glowing-red: var(--Glowing-Red);
+  --color-coal: var(--Coal);
+  --color-light-bg: var(--Light-BG);
+  --color-pure-black: var(--Pure-Black);
+  --color-white: var(--White);
 }
