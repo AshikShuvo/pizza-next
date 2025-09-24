@@ -4,6 +4,7 @@ import {Locale, hasLocale, NextIntlClientProvider} from 'next-intl';
 import {getTranslations, setRequestLocale} from 'next-intl/server';
 import {routing} from '../../i18n/routing';
 import { notFound } from "next/navigation";
+import { Navbar } from "@/components/layout";
 // Define the layout props type
 type LayoutProps = {
   children: React.ReactNode;
@@ -53,20 +54,7 @@ export default async function RootLayout({
         <NextIntlClientProvider>
           <div className="min-h-screen flex flex-col">
             {/* Navbar Section */}
-            <header className="bg-gray-800 text-white p-4">
-              <nav className="container mx-auto">
-                <div className="flex items-center justify-between">
-                  <div className="text-xl font-bold">
-                    Dummy Navbar
-                  </div>
-                  <div className="space-x-4">
-                    <a href="#" className="hover:text-gray-300">Home</a>
-                    <a href="#" className="hover:text-gray-300">About</a>
-                    <a href="#" className="hover:text-gray-300">Contact</a>
-                  </div>
-                </div>
-              </nav>
-            </header>
+            <Navbar />
 
             {/* Main Section - Takes maximum height */}
             <main className="flex-1 bg-gray-50">
