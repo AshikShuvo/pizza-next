@@ -16,7 +16,7 @@ export default function Home({params}: PageProps) {
   const t = useTranslations('HomePage');
 
   return (
-    <div className="min-h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-full flex items-center justify-center">
       <div className="max-w-2xl mx-auto text-center p-8">
         <h1 className="text-5xl font-ringside-compressed-bold mb-6 text-gray-900">{t('title')}</h1>
         <h1 className="text-5xl font-ringside-compressed-bold mb-6 text-gray-900">

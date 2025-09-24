@@ -57,12 +57,12 @@ export default async function RootLayout({
             <Navbar />
 
             {/* Main Section - Takes maximum height */}
-            <main className="flex-1 bg-gray-50">
+            <main className="flex-1">
               {children}
             </main>
 
             {/* Footer Section */}
-            <footer className="bg-gray-900 text-white p-6">
+            <footer className="text-white p-6">
               <div className="container mx-auto">
                 <div className="text-center">
                   <p>&copy; 2024 Dummy Footer. All rights reserved.</p>
