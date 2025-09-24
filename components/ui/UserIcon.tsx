@@ -1,14 +1,32 @@
 'use client';
 
+import { useAuthContext } from '@/components/features/auth';
+import UserDropdown from '@/components/features/auth/UserDropdown';
+
 interface UserIconProps {
   className?: string;
-  onClick?: () => void;
 }
 
-export default function UserIcon({ className = '', onClick }: UserIconProps) {
+export default function UserIcon({ className = '' }: UserIconProps) {
+  const { isAuthenticated } = useAuthContext();
+
+  const handleClick = () => {
+    if (isAuthenticated) {
+      // For authenticated users, the dropdown will handle the click
+      return;
+    } else {
+      // For non-authenticated users, just log for now
+      console.log('User icon clicked - not authenticated');
+    }
+  };
+
+  if (isAuthenticated) {
+    return <UserDropdown className={className} />;
+  }
+
   return (
     <button
-      onClick={onClick}
+      onClick={handleClick}
       className={`p-2 rounded-full hover:bg-gray-100 transition-colors ${className}`}
       aria-label="User account"
     >

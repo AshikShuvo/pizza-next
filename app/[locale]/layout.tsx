@@ -5,6 +5,7 @@ import {getTranslations, setRequestLocale} from 'next-intl/server';
 import {routing} from '../../i18n/routing';
 import { notFound } from "next/navigation";
 import { Navbar } from "@/components/layout";
+import { AuthProvider } from "@/components/features/auth";
 // Define the layout props type
 type LayoutProps = {
   children: React.ReactNode;
@@ -52,24 +53,26 @@ export default async function RootLayout({
         className={`${ringsideCompressed.variable} ${ringsideNarrow.variable} antialiased`}
       >
         <NextIntlClientProvider>
-          <div className="min-h-screen flex flex-col">
-            {/* Navbar Section */}
-            <Navbar />
+          <AuthProvider>
+            <div className="min-h-screen flex flex-col">
+              {/* Navbar Section */}
+              <Navbar />
 
-            {/* Main Section - Takes maximum height */}
-            <main className="flex-1">
-              {children}
-            </main>
+              {/* Main Section - Takes maximum height */}
+              <main className="flex-1">
+                {children}
+              </main>
 
-            {/* Footer Section */}
-            <footer className="text-white p-6">
-              <div className="container mx-auto">
-                <div className="text-center">
-                  <p>&copy; 2024 Dummy Footer. All rights reserved.</p>
+              {/* Footer Section */}
+              <footer className="text-white p-6">
+                <div className="container mx-auto">
+                  <div className="text-center">
+                    <p>&copy; 2024 Dummy Footer. All rights reserved.</p>
+                  </div>
                 </div>
-              </div>
-            </footer>
-          </div>
+              </footer>
+            </div>
+          </AuthProvider>
         </NextIntlClientProvider>
         </body>
     </html>
