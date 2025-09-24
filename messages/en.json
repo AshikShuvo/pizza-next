@@ -4,5 +4,12 @@
     },
     "LocaleLayout": {
         "title": "Peppes Next.js App"
+    },
+    "Navigation": {
+        "home": "Home",
+        "about": "About",
+        "contact": "Contact",
+        "services": "Services",
+        "portfolio": "Portfolio"
     }
 }
