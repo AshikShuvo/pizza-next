@@ -24,7 +24,7 @@ import {
 
 interface HybridDialogProps {
   trigger?: React.ReactNode
-  title: string
+  title?: string
   description?: string
   children: React.ReactNode
   footer?: React.ReactNode
@@ -33,7 +33,7 @@ interface HybridDialogProps {
   onOpenChange?: (open: boolean) => void
 }
 
-export function HybridDialog({
+export default function HybridDialog({
   trigger,
   title,
   description,
@@ -51,7 +51,7 @@ export function HybridDialog({
         {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
         <DialogContent className={cn("sm:max-w-[425px]", className)}>
           <DialogHeader>
-            <DialogTitle>{title}</DialogTitle>
+            {title && <DialogTitle>{title}</DialogTitle>}
             {description && <DialogDescription>{description}</DialogDescription>}
           </DialogHeader>
           {children}
@@ -65,7 +65,7 @@ export function HybridDialog({
       {trigger && <DrawerTrigger asChild>{trigger}</DrawerTrigger>}
       <DrawerContent className={className}>
         <DrawerHeader className="text-left">
-          <DrawerTitle>{title}</DrawerTitle>
+          {title && <DrawerTitle>{title}</DrawerTitle>}
           {description && <DrawerDescription>{description}</DrawerDescription>}
         </DrawerHeader>
         <div className="px-4">{children}</div>

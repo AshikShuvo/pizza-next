@@ -10,6 +10,7 @@ import { AuthProvider } from "@/components/features/auth";
 type LayoutProps = {
   children: React.ReactNode;
   params: Promise<{locale: string}>;
+  authModal: React.ReactNode;
 };
 
 export function generateStaticParams() {
@@ -38,7 +39,8 @@ export async function generateMetadata(
 
 export default async function RootLayout({
   children,
-  params
+  params,
+  authModal
 }: LayoutProps) {
   const {locale} = await params;
   if (!hasLocale(routing.locales, locale)) {
@@ -54,6 +56,7 @@ export default async function RootLayout({
       >
         <NextIntlClientProvider>
           <AuthProvider>
+            {authModal}
             <div className="min-h-screen flex flex-col" suppressHydrationWarning={true}>
               {/* Navbar Section */}
               <Navbar />

@@ -27,4 +27,4 @@ export {
   DrawerTitle,
   DrawerTrigger,
 } from './drawer';
-export { HybridDialog } from './hybrid-dialog';
+export { default as HybridDialog } from './hybrid-dialog';

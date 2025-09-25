@@ -8,15 +8,15 @@ interface UserIconProps {
 }
 
 export default function UserIcon({ className = '' }: UserIconProps) {
-  const { isAuthenticated } = useAuthContext();
+  const { isAuthenticated, openAuthModal } = useAuthContext();
 
   const handleClick = () => {
     if (isAuthenticated) {
       // For authenticated users, the dropdown will handle the click
       return;
     } else {
-      // For non-authenticated users, just log for now
-      console.log('User icon clicked - not authenticated');
+      // For non-authenticated users, open the auth modal
+      openAuthModal();
     }
   };
 
