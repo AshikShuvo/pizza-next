@@ -43,19 +43,28 @@ export default function HomePage() {
             </div>
             
             <div className="space-y-4">
-              <Link 
-                href="/profile" 
-                className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-ringside-compressed-medium px-8 py-3 rounded-lg transition-colors duration-200 mr-4"
-              >
-                View Profile
-              </Link>
-              
-              <Link 
-                href="/auth-test" 
-                className="inline-block bg-gray-600 hover:bg-gray-700 text-white font-ringside-compressed-medium px-8 py-3 rounded-lg transition-colors duration-200"
-              >
-                Test Authentication
-              </Link>
+              <div className="flex flex-wrap gap-4 justify-center">
+                <Link 
+                  href="/profile" 
+                  className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-ringside-compressed-medium px-8 py-3 rounded-lg transition-colors duration-200"
+                >
+                  View Profile
+                </Link>
+                
+                <Link 
+                  href="/auth-test" 
+                  className="inline-block bg-gray-600 hover:bg-gray-700 text-white font-ringside-compressed-medium px-8 py-3 rounded-lg transition-colors duration-200"
+                >
+                  Test Authentication
+                </Link>
+                
+                <Link 
+                  href="/api-test" 
+                  className="inline-block bg-purple-600 hover:bg-purple-700 text-white font-ringside-compressed-medium px-8 py-3 rounded-lg transition-colors duration-200"
+                >
+                  Test API Client
+                </Link>
+              </div>
             </div>
           </div>
         ) : (
@@ -74,16 +83,26 @@ export default function HomePage() {
         )}
         
         <div className="space-y-4">
-          <Link 
-            href="/theme" 
-            className="inline-block bg-gray-600 hover:bg-gray-700 text-white font-ringside-compressed-medium px-8 py-3 rounded-lg transition-colors duration-200"
-          >
-            View Font Theme Examples
-          </Link>
+          <div className="flex flex-wrap gap-4 justify-center">
+            <Link 
+              href="/theme" 
+              className="inline-block bg-gray-600 hover:bg-gray-700 text-white font-ringside-compressed-medium px-8 py-3 rounded-lg transition-colors duration-200"
+            >
+              View Font Theme Examples
+            </Link>
+            
+            <Link 
+              href="/api-test" 
+              className="inline-block bg-purple-600 hover:bg-purple-700 text-white font-ringside-compressed-medium px-8 py-3 rounded-lg transition-colors duration-200"
+            >
+              Test API Client
+            </Link>
+          </div>
           
           <div className="text-sm text-gray-500 font-ringside-narrow-regular">
             <p>Available fonts: Ringside Compressed & Ringside Narrow</p>
             <p>Visit <code>/theme</code> to see all font examples and usage instructions</p>
+            <p>Visit <code>/api-test</code> to test the API client functionality</p>
           </div>
         </div>
       </div>

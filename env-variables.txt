@@ -19,3 +19,20 @@ NEXT_PUBLIC_AD_PUBLIC_POST_LOGOUT_REDIRECT_URL="http://localhost:3000"
 
 # Known authority for token validation (your B2C tenant domain)
 NEXT_PUBLIC_AD_PUBLIC_KNOWN_AUTHORITY="https://your-tenant.b2clogin.com"
+
+# API Configuration
+# Base URL for your API (required)
+NEXT_PUBLIC_API_BASE_URL="https://your-api-domain.com/api"
+
+# Optional API Configuration
+# API timeout in milliseconds (default: 10000)
+NEXT_PUBLIC_API_TIMEOUT="10000"
+
+# Number of retry attempts (default: 3)
+NEXT_PUBLIC_API_RETRIES="3"
+
+# Retry delay in milliseconds (default: 1000)
+NEXT_PUBLIC_API_RETRY_DELAY="1000"
+
+# API version header (optional)
+NEXT_PUBLIC_API_VERSION="v1"
