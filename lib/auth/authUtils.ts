@@ -49,6 +49,15 @@ export const clearStoredAuthMethod = (): void => {
   }
 };
 
+// Clear all stored auth data
+export const clearStoredAuthData = (): void => {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('auth_method');
+    localStorage.removeItem('auth_authenticated');
+    localStorage.removeItem('auth_user');
+  }
+};
+
 // Check if token is expired
 export const isTokenExpired = (expiresOn: string | number): boolean => {
   const expiryTime = typeof expiresOn === 'string' ? parseInt(expiresOn) : expiresOn;

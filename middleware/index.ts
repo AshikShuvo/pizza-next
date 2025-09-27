@@ -14,8 +14,8 @@ const intlMiddleware = createMiddleware({
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  // Temporarily disable middleware for auth routes to test
-  if (pathname.includes('/auth')) {
+  // Exclude auth routes from internationalization
+  if (pathname === '/auth' || pathname.startsWith('/auth/')) {
     return NextResponse.next();
   }
   

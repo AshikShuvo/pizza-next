@@ -48,16 +48,33 @@ export const useAuthTokens = (): UseAuthTokensReturn => {
       setAccount(response.account);
       setAccessToken(response.accessToken);
       setIdToken(response.idToken);
+      
+      // Clear the stored auth data flag after successful token refresh
+      // This allows future token refreshes to work normally
+      localStorage.removeItem('auth_authenticated');
     } catch (error: unknown) {
       console.error('Token refresh error:', error);
-      setError(error instanceof Error ? error.message : 'Failed to refresh token');
       
-      // If silent token acquisition fails, clear the session
-      if (error && typeof error === 'object' && 'errorCode' in error && error.errorCode === 'interaction_required') {
-        setAccount(null);
-        setAccessToken(null);
-        setIdToken(null);
+      // Handle specific MSAL errors
+      if (error && typeof error === 'object' && 'errorCode' in error) {
+        const errorCode = error.errorCode as string;
+        
+        if (errorCode === 'endpoints_resolution_error') {
+          console.warn('Endpoints resolution error - MSAL instance may not be fully initialized');
+          setError('Authentication system is initializing. Please try again in a moment.');
+          return; // Don't clear the session for this error
+        }
+        
+        if (errorCode === 'interaction_required') {
+          setAccount(null);
+          setAccessToken(null);
+          setIdToken(null);
+          setError('Please sign in again');
+          return;
+        }
       }
+      
+      setError(error instanceof Error ? error.message : 'Failed to refresh token');
     } finally {
       setIsLoading(false);
     }
@@ -75,6 +92,16 @@ export const useAuthTokens = (): UseAuthTokensReturn => {
         setIsLoading(true);
         setError(null);
 
+        // Check if we have stored auth data (from recent login)
+        // If so, don't try to refresh tokens at all to avoid endpoints_resolution_error
+        const hasStoredAuthData = localStorage.getItem('auth_authenticated') === 'true';
+        
+        if (hasStoredAuthData) {
+          console.log('Skipping token initialization due to recent login with stored auth data');
+          setIsLoading(false);
+          return;
+        }
+        
         const accounts = msalInstance.getAllAccounts();
         if (accounts.length === 0) {
           setAccount(null);
@@ -85,6 +112,10 @@ export const useAuthTokens = (): UseAuthTokensReturn => {
 
         const account = accounts[0];
         setAccount(account);
+        
+        // Add a small delay to ensure MSAL is fully initialized
+        // This prevents endpoints_resolution_error immediately after login
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         // Try to get fresh tokens
         await refreshToken();
