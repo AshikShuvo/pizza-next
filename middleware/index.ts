@@ -1,5 +1,6 @@
 import createMiddleware from 'next-intl/middleware';
 import {routing} from '../i18n/routing';
+import { NextRequest, NextResponse } from 'next/server';
 
 // Create middleware with custom configuration
 const intlMiddleware = createMiddleware({
@@ -9,8 +10,18 @@ const intlMiddleware = createMiddleware({
   // Optional: Add locale detection strategies
   localeDetection: true
 });
- 
-export default intlMiddleware;
+
+export default function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  
+  // Exclude auth routes from internationalization
+  if (pathname === '/auth' || pathname.startsWith('/auth/')) {
+    return NextResponse.next();
+  }
+  
+  // Apply internationalization middleware to all other routes
+  return intlMiddleware(request);
+}
  
 export const config = {
   // Match all pathnames except for

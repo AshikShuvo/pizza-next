@@ -5,10 +5,12 @@ import {getTranslations, setRequestLocale} from 'next-intl/server';
 import {routing} from '../../i18n/routing';
 import { notFound } from "next/navigation";
 import { Navbar } from "@/components/layout";
+import { AuthProvider } from "@/components/features/auth";
 // Define the layout props type
 type LayoutProps = {
   children: React.ReactNode;
   params: Promise<{locale: string}>;
+  authModal: React.ReactNode;
 };
 
 export function generateStaticParams() {
@@ -37,7 +39,8 @@ export async function generateMetadata(
 
 export default async function RootLayout({
   children,
-  params
+  params,
+  authModal
 }: LayoutProps) {
   const {locale} = await params;
   if (!hasLocale(routing.locales, locale)) {
@@ -52,24 +55,27 @@ export default async function RootLayout({
         className={`${ringsideCompressed.variable} ${ringsideNarrow.variable} antialiased`}
       >
         <NextIntlClientProvider>
-          <div className="min-h-screen flex flex-col">
-            {/* Navbar Section */}
-            <Navbar />
+          <AuthProvider>
+            {authModal}
+            <div className="min-h-screen flex flex-col" suppressHydrationWarning={true}>
+              {/* Navbar Section */}
+              <Navbar />
 
-            {/* Main Section - Takes maximum height */}
-            <main className="flex-1">
-              {children}
-            </main>
+              {/* Main Section - Takes maximum height */}
+              <main className="flex-1">
+                {children}
+              </main>
 
-            {/* Footer Section */}
-            <footer className="text-white p-6">
-              <div className="container mx-auto">
-                <div className="text-center">
-                  <p>&copy; 2024 Dummy Footer. All rights reserved.</p>
+              {/* Footer Section */}
+              <footer className="text-white p-6">
+                <div className="container mx-auto">
+                  <div className="text-center">
+                    <p>&copy; 2024 Dummy Footer. All rights reserved.</p>
+                  </div>
                 </div>
-              </div>
-            </footer>
-          </div>
+              </footer>
+            </div>
+          </AuthProvider>
         </NextIntlClientProvider>
         </body>
     </html>

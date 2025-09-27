@@ -38,6 +38,7 @@ export default function CustomImage({
         priority={priority}
         quality={quality}
         sizes={sizes}
+        suppressHydrationWarning={true}
       />
     );
   }
@@ -54,6 +55,7 @@ export default function CustomImage({
       priority={priority}
       quality={quality}
       sizes={sizes}
+      suppressHydrationWarning={true}
     />
   );
 }

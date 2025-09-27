@@ -1,0 +1,21 @@
+# Azure B2C Authentication Configuration
+# Copy these variables to your .env.local file and replace the placeholder values
+
+# Client ID from your Azure B2C app registration
+NEXT_PUBLIC_AD_PUBLIC_CLIENT_ID="your-client-id-here"
+
+# Authority for Vipps SSO user flow (used when clicking "Continue with Vipps")
+NEXT_PUBLIC_AD_PUBLIC_AUTHORITY="https://your-tenant.b2clogin.com/your-tenant.onmicrosoft.com/B2C_1_signup_signin_vipps"
+
+# Authority for OTP user flow (used when clicking "Continue with OTP")
+NEXT_PUBLIC_AD_PUBLIC_AUTHORITY_PHONE="https://your-tenant.b2clogin.com/your-tenant.onmicrosoft.com/B2C_1_signup_signin_otp"
+
+# Redirect URL after successful authentication (auth callback page)
+# Note: Using non-locale route for better reliability
+NEXT_PUBLIC_AD_PUBLIC_REDIRECT_URL="http://localhost:3000/auth"
+
+# Redirect URL after logout
+NEXT_PUBLIC_AD_PUBLIC_POST_LOGOUT_REDIRECT_URL="http://localhost:3000"
+
+# Known authority for token validation (your B2C tenant domain)
+NEXT_PUBLIC_AD_PUBLIC_KNOWN_AUTHORITY="https://your-tenant.b2clogin.com"

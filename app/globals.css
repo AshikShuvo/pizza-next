@@ -1,9 +1,8 @@
 @import "tailwindcss";
-
+@import "./styles/base.css";
 @plugin "tailwindcss-animate";
 @import "./styles/variables.css";
 @import "./styles/fonts.css";
-@import "./styles/base.css";
 @import "./styles/utilities.css";
 @import "tw-animate-css";
 
@@ -49,9 +48,6 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
   }
 }
 
