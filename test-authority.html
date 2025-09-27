@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authority Test</title>
+</head>
+<body>
+    <h1>Authority Configuration Test</h1>
+    <div id="output"></div>
+    
+    <script type="module">
+        // Simulate the environment variables
+        const env = {
+            NEXT_PUBLIC_AD_PUBLIC_CLIENT_ID: 'test-client-id',
+            NEXT_PUBLIC_AD_PUBLIC_AUTHORITY: 'https://test.b2clogin.com/test.onmicrosoft.com/B2C_1_signup_signin_vipps',
+            NEXT_PUBLIC_AD_PUBLIC_AUTHORITY_PHONE: 'https://test.b2clogin.com/test.onmicrosoft.com/B2C_1_signup_signin_otp',
+            NEXT_PUBLIC_AD_PUBLIC_REDIRECT_URL: 'http://localhost:3000',
+            NEXT_PUBLIC_AD_PUBLIC_POST_LOGOUT_REDIRECT_URL: 'http://localhost:3000',
+            NEXT_PUBLIC_AD_PUBLIC_KNOWN_AUTHORITY: 'https://test.b2clogin.com'
+        };
+        
+        // Set environment variables
+        Object.keys(env).forEach(key => {
+            window[key] = env[key];
+        });
+        
+        // Simulate the getLoginRequest function
+        function getLoginRequest(authMethod) {
+            const baseRequest = {
+                scopes: ['openid', 'profile', 'email'],
+                prompt: 'select_account',
+            };
+
+            if (authMethod === 'otp') {
+                return {
+                    ...baseRequest,
+                    authority: env.NEXT_PUBLIC_AD_PUBLIC_AUTHORITY_PHONE,
+                };
+            } else {
+                return {
+                    ...baseRequest,
+                    authority: env.NEXT_PUBLIC_AD_PUBLIC_AUTHORITY,
+                };
+            }
+        }
+        
+        const output = document.getElementById('output');
+        
+        // Test Vipps request
+        const vippsRequest = getLoginRequest('vipps');
+        output.innerHTML += '<h3>Vipps Login Request:</h3>';
+        output.innerHTML += '<pre>' + JSON.stringify(vippsRequest, null, 2) + '</pre>';
+        
+        // Test OTP request
+        const otpRequest = getLoginRequest('otp');
+        output.innerHTML += '<h3>OTP Login Request:</h3>';
+        output.innerHTML += '<pre>' + JSON.stringify(otpRequest, null, 2) + '</pre>';
+        
+        // Verify authorities are different
+        if (vippsRequest.authority !== otpRequest.authority) {
+            output.innerHTML += '<p style="color: green;">✅ Authorities are different - Configuration is correct!</p>';
+        } else {
+            output.innerHTML += '<p style="color: red;">❌ Authorities are the same - Configuration needs fixing!</p>';
+        }
+    </script>
+</body>
+</html>
