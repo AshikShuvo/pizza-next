@@ -4,12 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PublicClientApplication } from '@azure/msal-browser';
 import { msalConfig } from '@/lib/auth/msalConfig';
-import { 
-  determineAuthMethod, 
-  storeAuthMethod, 
-  getStoredAuthMethod,
-  extractUserProfile
-} from '@/lib/auth/authUtils';
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -20,25 +14,17 @@ export default function AuthCallbackPage() {
       try {
         setStatus('processing');
         
-        // Initialize MSAL instance (reuse existing if available)
-        let instance: PublicClientApplication;
-        
-        // Check if there's already a global MSAL instance
-        if (typeof window !== 'undefined' && (window as unknown as { msalInstance?: PublicClientApplication }).msalInstance) {
-          instance = (window as unknown as { msalInstance: PublicClientApplication }).msalInstance;
-        } else {
-          instance = new PublicClientApplication(msalConfig);
-          await instance.initialize();
-          // Store it globally to prevent multiple instances
-          if (typeof window !== 'undefined') {
-            (window as unknown as { msalInstance: PublicClientApplication }).msalInstance = instance;
-          }
-        }
-
         // Check URL parameters for error information first
+        console.log('Current URL:', window.location.href);
+        console.log('URL search params:', window.location.search);
+        console.log('URL hash:', window.location.hash);
+        
         const urlParams = new URLSearchParams(window.location.search);
         const error = urlParams.get('error');
         const errorDescription = urlParams.get('error_description');
+        
+        console.log('Error from URL params:', error);
+        console.log('Error description:', errorDescription);
         
         if (error) {
           console.error('Authentication error from URL:', error);
@@ -48,20 +34,9 @@ export default function AuthCallbackPage() {
           localStorage.removeItem('auth_authenticated');
           localStorage.removeItem('auth_user');
           localStorage.removeItem('auth_method');
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('id_token');
           
-          // Check if user cancelled the login
-          if (error === 'access_denied' || 
-              errorDescription?.includes('User cancelled')) {
-            console.log('User cancelled authentication');
-            setStatus('error');
-            setTimeout(() => {
-              const savedLocale = localStorage.getItem('NEXT_LOCALE') || 'en';
-              router.push(`/${savedLocale}`);
-            }, 2000);
-            return;
-          }
-          
-          // Other authentication errors
           setStatus('error');
           setTimeout(() => {
             const savedLocale = localStorage.getItem('NEXT_LOCALE') || 'en';
@@ -70,15 +45,41 @@ export default function AuthCallbackPage() {
           return;
         }
 
-        // Get stored auth method to determine which authority to use
-        const storedAuthMethod = getStoredAuthMethod();
-        console.log('Stored auth method:', storedAuthMethod);
+        // Initialize MSAL instance (reuse existing if available)
+        let instance: PublicClientApplication;
+        
+        console.log('MSAL Config:', {
+          clientId: msalConfig.auth.clientId,
+          authority: msalConfig.auth.authority,
+          redirectUri: msalConfig.auth.redirectUri,
+          knownAuthorities: msalConfig.auth.knownAuthorities
+        });
+        
+        // Check if there's already a global MSAL instance
+        if (typeof window !== 'undefined' && (window as unknown as { msalInstance?: PublicClientApplication }).msalInstance) {
+          console.log('Using existing global MSAL instance');
+          instance = (window as unknown as { msalInstance: PublicClientApplication }).msalInstance;
+        } else {
+          console.log('Creating new MSAL instance');
+          instance = new PublicClientApplication(msalConfig);
+          await instance.initialize();
+          console.log('MSAL instance initialized');
+          // Store it globally to prevent multiple instances
+          if (typeof window !== 'undefined') {
+            (window as unknown as { msalInstance: PublicClientApplication }).msalInstance = instance;
+          }
+        }
 
         // Handle the redirect promise
+        console.log('Handling redirect promise...');
         const redirectResponse = await instance.handleRedirectPromise();
+        console.log('Redirect promise result:', redirectResponse);
         
         if (redirectResponse) {
           console.log('Redirect response received:', redirectResponse);
+          console.log('Access token from redirect:', redirectResponse.accessToken ? 'Available' : 'Not available');
+          console.log('Access token length:', redirectResponse.accessToken?.length || 0);
+          console.log('Account info:', redirectResponse.account);
           
           // Check if we have a valid account
           if (!redirectResponse.account) {
@@ -92,21 +93,36 @@ export default function AuthCallbackPage() {
           }
           
           // Extract user profile and auth method
-          const userProfile = extractUserProfile(redirectResponse.account);
-          const detectedAuthMethod = determineAuthMethod(redirectResponse.account);
+          const userProfile = {
+            name: redirectResponse.account.name || redirectResponse.account.username,
+            email: redirectResponse.account.username,
+            id: redirectResponse.account.homeAccountId,
+          };
+          
+          // Determine auth method based on authority
+          const detectedAuthMethod = redirectResponse.account.environment?.includes('b2clogin.com') 
+            ? (redirectResponse.account.username?.includes('@') ? 'otp' : 'vipps')
+            : 'otp';
           
           console.log('User profile:', userProfile);
           console.log('Detected auth method:', detectedAuthMethod);
           
-          // Store the auth method and user data
-          if (detectedAuthMethod) {
-            storeAuthMethod(detectedAuthMethod);
+          // Store user data and tokens
+          localStorage.setItem('auth_user', JSON.stringify(userProfile));
+          localStorage.setItem('auth_method', detectedAuthMethod);
+          localStorage.setItem('auth_authenticated', 'true');
+          
+          // Store access token if available
+          if (redirectResponse.accessToken) {
+            localStorage.setItem('access_token', redirectResponse.accessToken);
+            console.log('Access token stored from redirect response');
           }
           
-          // Store user data in localStorage for the auth context to pick up
-          localStorage.setItem('auth_user', JSON.stringify(userProfile));
-          localStorage.setItem('auth_method', detectedAuthMethod || '');
-          localStorage.setItem('auth_authenticated', 'true');
+          // Store ID token if available
+          if (redirectResponse.idToken) {
+            localStorage.setItem('id_token', redirectResponse.idToken);
+            console.log('ID token stored from redirect response');
+          }
           
           setStatus('success');
           
@@ -117,20 +133,56 @@ export default function AuthCallbackPage() {
           }, 2000);
         } else {
           // No redirect response, check if user is already authenticated
+          console.log('No redirect response, checking existing accounts...');
           const accounts = instance.getAllAccounts();
+          console.log('Existing accounts:', accounts.length);
+          
           if (accounts.length > 0) {
+            console.log('Found existing account, processing...');
             const account = accounts[0];
-            const userProfile = extractUserProfile(account);
-            const detectedAuthMethod = determineAuthMethod(account);
+            console.log('Account details:', {
+              username: account.username,
+              homeAccountId: account.homeAccountId,
+              environment: account.environment
+            });
             
-            // Store the auth method and user data
-            if (detectedAuthMethod) {
-              storeAuthMethod(detectedAuthMethod);
-            }
+            const userProfile = {
+              name: account.name || account.username,
+              email: account.username,
+              id: account.homeAccountId,
+            };
+            
+            const detectedAuthMethod = account.environment?.includes('b2clogin.com') 
+              ? (account.username?.includes('@') ? 'otp' : 'vipps')
+              : 'otp';
             
             localStorage.setItem('auth_user', JSON.stringify(userProfile));
-            localStorage.setItem('auth_method', detectedAuthMethod || '');
+            localStorage.setItem('auth_method', detectedAuthMethod);
             localStorage.setItem('auth_authenticated', 'true');
+            
+            // Try to get tokens for existing account
+            try {
+              const tokenRequest = {
+                scopes: ['openid', 'profile', 'email'],
+                account: account,
+              };
+              
+              console.log('Attempting to get tokens for existing account...');
+              const tokenResponse = await instance.acquireTokenSilent(tokenRequest);
+              console.log('Token response:', tokenResponse);
+              
+              if (tokenResponse.accessToken) {
+                localStorage.setItem('access_token', tokenResponse.accessToken);
+                console.log('Access token stored from existing account');
+              }
+              
+              if (tokenResponse.idToken) {
+                localStorage.setItem('id_token', tokenResponse.idToken);
+                console.log('ID token stored from existing account');
+              }
+            } catch (tokenError) {
+              console.error('Error getting tokens for existing account:', tokenError);
+            }
             
             setStatus('success');
             
@@ -139,6 +191,7 @@ export default function AuthCallbackPage() {
               router.push(`/${savedLocale}`);
             }, 2000);
           } else {
+            console.log('No existing accounts found');
             setStatus('error');
             setTimeout(() => {
               const savedLocale = localStorage.getItem('NEXT_LOCALE') || 'en';

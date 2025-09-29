@@ -19,3 +19,27 @@ NEXT_PUBLIC_AD_PUBLIC_POST_LOGOUT_REDIRECT_URL="http://localhost:3000"
 
 # Known authority for token validation (your B2C tenant domain)
 NEXT_PUBLIC_AD_PUBLIC_KNOWN_AUTHORITY="https://your-tenant.b2clogin.com"
+
+# API Scope for access tokens (optional for Azure B2C)
+# Note: Azure B2C doesn't support .default scope format
+# If you need access tokens for external APIs, configure a proper API scope in your B2C app registration
+# Format: "https://your-tenant.b2clogin.com/your-tenant.onmicrosoft.com/your-api-app-id/scope-name"
+# For basic authentication, this can be left empty
+NEXT_PUBLIC_API_SCOPE=""
+
+# API Configuration
+# Base URL for your API (required)
+NEXT_PUBLIC_API_BASE_URL="https://your-api-domain.com/api"
+
+# Optional API Configuration
+# API timeout in milliseconds (default: 10000)
+NEXT_PUBLIC_API_TIMEOUT="10000"
+
+# Number of retry attempts (default: 3)
+NEXT_PUBLIC_API_RETRIES="3"
+
+# Retry delay in milliseconds (default: 1000)
+NEXT_PUBLIC_API_RETRY_DELAY="1000"
+
+# API version header (optional)
+NEXT_PUBLIC_API_VERSION="v1"
