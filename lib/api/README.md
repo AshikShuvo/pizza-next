@@ -1,412 +1,166 @@
-# Custom API Client with MSAL Integration
+# API Client Implementation
 
-A comprehensive API client for Next.js 15 applications with Microsoft Authentication Library (MSAL) integration, automatic token management, loading states, and error handling.
+This directory contains the refactored API client implementation that addresses the authentication issues by using a shared MSAL instance from the auth context instead of creating new instances for each API call.
 
-## Features
+## Problem Solved
 
-- 🔐 **MSAL Integration**: Automatic token acquisition and refresh using MSAL
-- 🔄 **Automatic Token Refresh**: Handles token expiration and refresh seamlessly
-- ⏳ **Loading State Management**: Global and per-endpoint loading states
-- 🚨 **Error Handling**: Comprehensive error handling with user-friendly messages
-- 🔄 **Retry Logic**: Exponential backoff retry for failed requests
-- ⏱️ **Request Timeout**: Configurable request timeouts
-- 🎯 **TypeScript Support**: Full type safety with generics
-- 📱 **React Hooks**: Easy-to-use React hooks for integration
+The original API client had the following issues:
+1. **New MSAL instances**: Each API call was trying to initialize a new MSAL instance, which couldn't access credentials stored in local storage
+2. **No shared context**: The API client wasn't using the existing MSAL instance from the auth context
+3. **SSR complications**: Server-side rendering calls were trying to authenticate unnecessarily
+4. **No token refresh**: 401 responses weren't handled with automatic token refresh
 
-## Installation
+## Solution Overview
 
-The API client is already integrated into your project. No additional installation required.
+The new implementation provides:
+1. **Hook-based API client** that accesses the shared MSAL instance from auth context
+2. **SSR detection** to skip authentication for server-side calls
+3. **Automatic token refresh** on 401 responses with retry logic
+4. **Backward compatibility** with the existing API client
 
-## Quick Start
+## Files Structure
 
-### 1. Basic Usage in Client Components
+```
+lib/api/
+├── apiClient.ts                    # Original API client (kept for backward compatibility)
+├── hooks/
+│   ├── useApiClient.ts            # New hook-based API client
+│   └── useLegacyApiClient.ts      # Legacy wrapper for old API client
+├── examples/
+│   └── useApiClientExample.tsx    # Usage examples
+└── README.md                      # This file
+```
 
-```typescript
-'use client';
+## New Hook-Based API Client
 
-import { useApiClient, useApiLoading, useApiError } from '@/lib/api/hooks';
+### Basic Usage
 
-export default function MyComponent() {
-  const api = useApiClient();
-  const { isLoading, isEndpointLoading } = useApiLoading();
-  const { error, hasError, setError, clearError, getErrorMessage } = useApiError();
+```tsx
+import { useApiClient } from '@/lib/api/hooks/useApiClient';
+
+function MyComponent() {
+  const { get, post, put, delete: del, getLoadingState } = useApiClient();
 
   const fetchData = async () => {
     try {
-      clearError();
-      const response = await api.get('/users/profile');
+      // This will automatically:
+      // 1. Skip auth for SSR
+      // 2. Include auth header if user is logged in
+      // 3. Refresh token and retry on 401
+      const response = await get('/api/data', {
+        requireAuth: true, // This is the default
+        timeout: 10000,
+      });
+      
       console.log(response.data);
     } catch (error) {
-      setError(error as Error);
+      console.error('API call failed:', error);
     }
   };
 
   return (
-    <div>
-      {isLoading && <div>Loading...</div>}
-      {hasError && <div>Error: {getErrorMessage()}</div>}
-      <button onClick={fetchData} disabled={isLoading}>
-        Fetch Data
-      </button>
-    </div>
+    <button onClick={fetchData}>
+      Fetch Data
+    </button>
   );
 }
 ```
 
-### 2. API Methods
+### Key Features
 
-The API client provides convenient methods for all HTTP verbs:
+#### 1. SSR Detection
+```tsx
+const { isSSR } = useApiClient();
 
-```typescript
+// The API client automatically detects SSR and skips authentication
+// No need to manually check for SSR in your components
+```
+
+#### 2. Automatic Authentication
+```tsx
+// Authenticated call (default)
+const response = await get('/api/protected-data');
+
+// Public call (no auth required)
+const response = await get('/api/public-data', {
+  requireAuth: false
+});
+```
+
+#### 3. Automatic Token Refresh
+```tsx
+// If the API returns 401, the client will:
+// 1. Automatically refresh the token using the auth context
+// 2. Retry the request with the new token
+// 3. Return the successful response or throw an error if refresh fails
+
+const response = await get('/api/data'); // Handles 401 automatically
+```
+
+#### 4. Loading State Management
+```tsx
+const { getLoadingState } = useApiClient();
+
+// Monitor loading state
+useEffect(() => {
+  const loadingState = getLoadingState();
+  console.log('Active requests:', loadingState.totalActiveRequests);
+  console.log('Global loading:', loadingState.global);
+}, [getLoadingState]);
+```
+
+### API Methods
+
+All HTTP methods are available with the same interface:
+
+```tsx
+const { get, post, put, patch, delete: del, request } = useApiClient();
+
 // GET request
-const response = await api.get<UserProfile>('/users/profile');
+const data = await get('/api/data', { timeout: 5000 });
 
 // POST request
-const response = await api.post<UserProfile>('/users', userData);
+const result = await post('/api/data', { name: 'New Item' }, {
+  headers: { 'Custom-Header': 'value' }
+});
 
 // PUT request
-const response = await api.put<UserProfile>('/users/123', updateData);
+const updated = await put('/api/data/123', { name: 'Updated Item' });
 
 // PATCH request
-const response = await api.patch<UserProfile>('/users/123', partialData);
+const patched = await patch('/api/data/123', { name: 'Patched Item' });
 
 // DELETE request
-const response = await api.delete('/users/123');
-```
+await del('/api/data/123');
 
-### 3. Advanced Configuration
-
-```typescript
-// Custom request configuration
-const response = await api.request<UserProfile>('/users/profile', {
-  method: 'GET',
-  headers: {
-    'Custom-Header': 'value',
-  },
-  timeout: 5000,
-  retries: 2,
-  requireAuth: true, // Default: true
-  signal: abortController.signal,
-});
-```
-
-## Configuration
-
-### Environment Variables
-
-Configure your API client using environment variables. Copy the variables from `env-variables.txt` to your `.env.local` file:
-
-```env
-# Required: API Base URL
-NEXT_PUBLIC_API_BASE_URL="https://your-api-domain.com/api"
-
-# Optional: API Configuration
-NEXT_PUBLIC_API_TIMEOUT="10000"        # Timeout in milliseconds (default: 10000)
-NEXT_PUBLIC_API_RETRIES="3"            # Number of retry attempts (default: 3)
-NEXT_PUBLIC_API_RETRY_DELAY="1000"     # Retry delay in milliseconds (default: 1000)
-NEXT_PUBLIC_API_VERSION="v1"           # API version header (optional)
-```
-
-### Default Configuration
-
-The API client comes with sensible defaults:
-
-- **Base URL**: `process.env.NEXT_PUBLIC_API_BASE_URL` or environment-specific fallback
-- **Timeout**: 10 seconds (configurable via `NEXT_PUBLIC_API_TIMEOUT`)
-- **Retries**: 3 attempts (configurable via `NEXT_PUBLIC_API_RETRIES`)
-- **Retry Delay**: 1 second (configurable via `NEXT_PUBLIC_API_RETRY_DELAY`)
-- **Authentication**: Required by default
-- **Default Headers**: Content-Type, Accept, X-Requested-With, API-Version (if set)
-
-### Environment-Specific Fallbacks
-
-The API client automatically handles different environments:
-
-- **Development**: Falls back to `http://localhost:3001/api` if no base URL is set
-- **Production**: Falls back to `/api` if no base URL is set
-- **Custom**: Uses `NEXT_PUBLIC_API_BASE_URL` if provided
-
-### Configuration Utilities
-
-The API client includes utilities for configuration management:
-
-```typescript
-import { getApiConfig, validateApiConfig, getDefaultHeaders } from '@/lib/api';
-
-// Get current configuration
-const config = getApiConfig();
-
-// Validate configuration
-const validation = validateApiConfig(config);
-if (!validation.isValid) {
-  console.warn('Configuration issues:', validation.errors);
-}
-
-// Get default headers
-const headers = getDefaultHeaders('v1');
-```
-
-### Custom Configuration
-
-You can also create custom API client instances:
-
-```typescript
-import { ApiClient } from '@/lib/api';
-
-const customApiClient = new ApiClient({
-  baseURL: 'https://custom-api.com/v2',
+// Custom request
+const custom = await request('/api/custom', {
+  method: 'POST',
+  body: { data: 'value' },
+  requireAuth: false,
   timeout: 15000,
-  retries: 5,
-  retryDelay: 2000,
-  defaultHeaders: {
-    'Content-Type': 'application/json',
-    'X-Custom-Header': 'value',
-  },
+  retries: 5
 });
 ```
 
-## React Hooks
+### Request Configuration
 
-### `useApiClient()`
-
-Returns the configured API client instance with MSAL integration.
-
-```typescript
-const api = useApiClient();
-```
-
-### `useApiLoading()`
-
-Provides loading state management:
-
-```typescript
-const { isLoading, totalActiveRequests, isEndpointLoading } = useApiLoading();
-
-// Check if any request is loading
-if (isLoading) { /* show global loading */ }
-
-// Check if specific endpoint is loading
-if (isEndpointLoading('/users/profile')) { /* show specific loading */ }
-```
-
-### `useApiError()`
-
-Handles error state management:
-
-```typescript
-const { error, hasError, setError, clearError, getErrorMessage } = useApiError();
-
-// Set error
-setError(error);
-
-// Clear error
-clearError();
-
-// Get user-friendly error message
-const message = getErrorMessage();
-```
-
-## Error Handling
-
-The API client provides comprehensive error handling:
-
-### Automatic Error Types
-
-- **401 Unauthorized**: Automatically attempts token refresh
-- **403 Forbidden**: User-friendly permission error
-- **404 Not Found**: Resource not found error
-- **5xx Server Errors**: Server error messages
-
-### Custom Error Handling
-
-```typescript
-try {
-  const response = await api.get('/users/profile');
-  // Handle success
-} catch (error) {
-  if (error instanceof ApiError) {
-    console.log('Status:', error.status);
-    console.log('Message:', error.message);
-  } else {
-    console.log('Network or other error:', error);
-  }
-}
-```
-
-## Loading States
-
-### Global Loading State
-
-```typescript
-const { isLoading } = useApiLoading();
-
-// Show global loading indicator
-{isLoading && <div>Loading...</div>}
-```
-
-### Per-Endpoint Loading State
-
-```typescript
-const { isEndpointLoading } = useApiLoading();
-
-// Show specific loading for an endpoint
-{isEndpointLoading('/users/profile') && <div>Loading profile...</div>}
-```
-
-### Loading State in Buttons
-
-```typescript
-<button 
-  disabled={isLoading || isEndpointLoading('/users/profile')}
-  onClick={fetchProfile}
->
-  {isEndpointLoading('/users/profile') ? 'Loading...' : 'Fetch Profile'}
-</button>
-```
-
-## Token Management
-
-The API client automatically handles token management through MSAL:
-
-1. **Token Acquisition**: Automatically gets access tokens from MSAL
-2. **Token Injection**: Adds `Authorization: Bearer <token>` header to requests
-3. **Token Refresh**: Automatically refreshes tokens on 401 errors
-4. **Token Caching**: Uses MSAL's built-in token cache
-
-### Manual Token Refresh
-
-If you need to manually refresh tokens:
-
-```typescript
-// The API client will automatically handle this, but you can also:
-const { refreshToken } = useAuthTokens();
-await refreshToken();
-```
-
-## Request Interceptors
-
-The API client supports request and response interceptors:
-
-```typescript
-// Add custom headers to all requests
-apiClient.addRequestInterceptor((config) => {
-  config.headers['X-Custom-Header'] = 'value';
-  return config;
-});
-
-// Handle responses globally
-apiClient.addResponseInterceptor((response) => {
-  console.log('Response received:', response);
-  return response;
-});
-```
-
-## Abort Controller Support
-
-Cancel requests using AbortController:
-
-```typescript
-const controller = new AbortController();
-
-// Cancel request after 5 seconds
-setTimeout(() => controller.abort(), 5000);
-
-try {
-  const response = await api.get('/users/profile', {
-    signal: controller.signal,
-  });
-} catch (error) {
-  if (error.name === 'AbortError') {
-    console.log('Request was cancelled');
-  }
-}
-```
-
-## TypeScript Support
-
-The API client is fully typed with TypeScript generics:
-
-```typescript
-interface UserProfile {
-  id: string;
-  name: string;
-  email: string;
-}
-
-// Type-safe API calls
-const response = await api.get<UserProfile>('/users/profile');
-// response.data is typed as UserProfile
-
-const createResponse = await api.post<UserProfile>('/users', {
-  name: 'John Doe',
-  email: 'john@example.com',
-});
-// createResponse.data is typed as UserProfile
-```
-
-## Examples
-
-See the example components in `lib/api/examples/`:
-
-- **UserProfileExample.tsx**: Complete CRUD operations example
-- **DataListExample.tsx**: List management with loading states
-
-## Best Practices
-
-1. **Always handle errors**: Use try-catch blocks and the error hooks
-2. **Show loading states**: Provide user feedback during API calls
-3. **Use TypeScript**: Define interfaces for your API responses
-4. **Handle authentication**: The client handles this automatically, but be aware of 401 errors
-5. **Clean up**: Cancel requests when components unmount using AbortController
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Token not found**: Ensure MSAL is properly initialized and user is authenticated
-2. **401 errors**: Check if the API endpoint requires authentication
-3. **CORS issues**: Ensure your API server allows requests from your domain
-4. **Timeout errors**: Increase the timeout value for slow endpoints
-
-### Debug Mode
-
-Enable debug logging by setting the environment variable:
-
-```env
-NEXT_PUBLIC_API_DEBUG=true
-```
-
-This will log all API requests and responses to the console.
-
-## API Reference
-
-### ApiClient Class
-
-- `get<T>(endpoint, config?)`: GET request
-- `post<T>(endpoint, body?, config?)`: POST request
-- `put<T>(endpoint, body?, config?)`: PUT request
-- `patch<T>(endpoint, body?, config?)`: PATCH request
-- `delete<T>(endpoint, config?)`: DELETE request
-- `request<T>(endpoint, config)`: Generic request method
-
-### RequestConfig Interface
-
-```typescript
+```tsx
 interface RequestConfig {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   headers?: Record<string, string>;
-  body?: any;
+  body?: unknown;
   timeout?: number;
   retries?: number;
-  requireAuth?: boolean;
+  requireAuth?: boolean;  // Default: true
   signal?: AbortSignal;
 }
 ```
 
-### ApiResponse Interface
+### Response Format
 
-```typescript
-interface ApiResponse<T = any> {
+```tsx
+interface ApiResponse<T = unknown> {
   data: T;
   status: number;
   statusText: string;
@@ -415,3 +169,92 @@ interface ApiResponse<T = any> {
   error?: string;
 }
 ```
+
+## Auth Context Integration
+
+The new API client integrates with the updated auth context:
+
+```tsx
+// AuthContext now exposes:
+interface AuthContextType {
+  // ... existing properties
+  msalInstance: PublicClientApplication | null;
+  accessToken: string | null;
+  refreshToken: () => Promise<string | null>;
+}
+```
+
+## Migration Guide
+
+### From Old API Client
+
+**Old way:**
+```tsx
+import { useApiClient } from '@/lib/api/hooks/useApiClient';
+
+function MyComponent() {
+  const { apiClient, isReady } = useApiClient();
+  
+  const fetchData = async () => {
+    if (isReady) {
+      const response = await apiClient.get('/api/data');
+      console.log(response.data);
+    }
+  };
+}
+```
+
+**New way:**
+```tsx
+import { useApiClient } from '@/lib/api/hooks/useApiClient';
+
+function MyComponent() {
+  const { get } = useApiClient();
+  
+  const fetchData = async () => {
+    const response = await get('/api/data');
+    console.log(response.data);
+  };
+}
+```
+
+### Backward Compatibility
+
+The old API client is still available as `useLegacyApiClient`:
+
+```tsx
+import { useLegacyApiClient } from '@/lib/api/hooks/useLegacyApiClient';
+
+// This maintains the old API for existing code
+const { apiClient, isReady } = useLegacyApiClient();
+```
+
+## Benefits
+
+1. **No more MSAL instance issues**: Uses shared instance from auth context
+2. **Automatic SSR handling**: No need to manually check for SSR
+3. **Automatic token refresh**: Handles 401 responses transparently
+4. **Better error handling**: Comprehensive error handling with retry logic
+5. **Loading state management**: Built-in loading state tracking
+6. **Type safety**: Full TypeScript support with proper types
+7. **Backward compatibility**: Existing code continues to work
+
+## Example Component
+
+See `lib/api/examples/useApiClientExample.tsx` for a complete example showing all features.
+
+## Configuration
+
+The API client uses the same configuration as the original client. See `lib/api/config.ts` for configuration options.
+
+## Error Handling
+
+The API client provides comprehensive error handling:
+
+- **Network errors**: Automatic retry with exponential backoff
+- **401 errors**: Automatic token refresh and retry
+- **4xx errors**: No retry, immediate error
+- **5xx errors**: Retry with exponential backoff
+- **Timeout errors**: Configurable timeout with abort signal support
+
+All errors are wrapped in the `ApiError` class for consistent error handling.

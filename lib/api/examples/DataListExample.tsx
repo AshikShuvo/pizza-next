@@ -18,7 +18,7 @@ interface CreatePostData {
 }
 
 export default function DataListExample() {
-  const api = useApiClient();
+  const { apiClient: api, isReady: isApiReady } = useApiClient();
   const { isLoading, isEndpointLoading } = useApiLoading();
   const { error, hasError, setError, clearError, getErrorMessage } = useApiError();
   

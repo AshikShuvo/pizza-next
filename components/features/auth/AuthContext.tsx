@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 // AuthenticationResult is no longer needed since we use redirect instead of popup
+import { PublicClientApplication } from '@azure/msal-browser';
 import { useMsal } from './hooks/useMsal';
 import { useAuthTokens } from './hooks/useAuthTokens';
 import { getLoginRequest, logoutRequest } from '@/lib/auth/msalConfig';
@@ -31,6 +32,10 @@ interface AuthContextType {
   user: User | null;
   authMethod: 'vipps' | 'otp' | null;
   error: string | null;
+  msalInstance: PublicClientApplication | null;
+  accessToken: string | null;
+  refreshToken: () => Promise<string | null>;
+  syncTokensFromStorage: () => void;
   loginWithVipps: () => Promise<void>;
   loginWithOTP: () => Promise<void>;
   logout: () => Promise<void>;
@@ -55,7 +60,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [error, setError] = useState<string | null>(null);
 
   const { instance: msalInstance, isInitialized: isMsalInitialized } = useMsal();
-  const { account } = useAuthTokens();
+  const { account, accessToken, refreshToken: refreshAuthToken, syncTokensFromStorage } = useAuthTokens();
 
   useEffect(() => {
     setIsClient(true);
@@ -219,12 +224,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setError(null);
 
       const loginRequest = getLoginRequest('vipps');
-      console.log('Vipps login request:', loginRequest);
+      
+      // Store the auth method before redirecting
+      storeAuthMethod('vipps');
+      
       await msalInstance.loginRedirect(loginRequest);
       // Note: The response will be handled by the handleRedirectPromise in the MSAL instance
     } catch (error: unknown) {
       console.error('Vipps login error:', error);
-      setError(handleAuthError(error));
+      
+      // Handle specific MSAL errors
+      if (error && typeof error === 'object' && 'errorCode' in error) {
+        const errorCode = error.errorCode as string;
+        
+        if (errorCode === 'endpoints_resolution_error') {
+          setError('Authentication system is initializing. Please wait a moment and try again.');
+        } else if (errorCode === 'user_cancelled') {
+          setError('Login was cancelled. Please try again if you want to sign in.');
+        } else if (errorCode === 'popup_window_error') {
+          setError('Popup was blocked. Please allow popups for this site and try again.');
+        } else {
+          setError(handleAuthError(error));
+        }
+      } else {
+        setError(handleAuthError(error));
+      }
+      
       setIsLoading(false);
     }
   }, [msalInstance, isMsalInitialized]);
@@ -240,12 +265,42 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setError(null);
 
       const loginRequest = getLoginRequest('otp');
-      console.log('OTP login request:', loginRequest);
+      
+      // Validate OTP authority URL before attempting login
+      const otpAuthority = process.env.NEXT_PUBLIC_AD_PUBLIC_AUTHORITY_PHONE;
+      if (!otpAuthority) {
+        setError('OTP authentication is not configured. Please check your environment variables.');
+        setIsLoading(false);
+        return;
+      }
+      
+      // Store the auth method before redirecting
+      storeAuthMethod('otp');
+      
       await msalInstance.loginRedirect(loginRequest);
       // Note: The response will be handled by the handleRedirectPromise in the MSAL instance
     } catch (error: unknown) {
       console.error('OTP login error:', error);
-      setError(handleAuthError(error));
+      
+      // Handle specific MSAL errors
+      if (error && typeof error === 'object' && 'errorCode' in error) {
+        const errorCode = error.errorCode as string;
+        
+        if (errorCode === 'endpoints_resolution_error') {
+          setError('Authentication system is initializing. Please wait a moment and try again.');
+        } else if (errorCode === 'user_cancelled') {
+          setError('Login was cancelled. Please try again if you want to sign in.');
+        } else if (errorCode === 'popup_window_error') {
+          setError('Popup was blocked. Please allow popups for this site and try again.');
+        } else if (errorCode === 'invalid_authority') {
+          setError('Invalid OTP authority URL. Please check your Azure B2C configuration.');
+        } else {
+          setError(handleAuthError(error));
+        }
+      } else {
+        setError(handleAuthError(error));
+      }
+      
       setIsLoading(false);
     }
   }, [msalInstance, isMsalInitialized]);
@@ -270,11 +325,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setAuthMethod(null);
       clearStoredAuthData();
 
+      // Clear stored tokens
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('id_token');
+      localStorage.removeItem('auth_authenticated');
+      localStorage.removeItem('auth_user');
+      localStorage.removeItem('auth_method');
+
       // Then redirect to logout
       await msalInstance.logoutRedirect(logoutRequest);
     } catch (error: unknown) {
       console.error('Logout error:', error);
-      setError(handleAuthError(error));
+      
+      // Handle specific MSAL errors
+      if (error && typeof error === 'object' && 'errorCode' in error) {
+        const errorCode = error.errorCode as string;
+        
+        if (errorCode === 'endpoints_resolution_error') {
+          setError('Authentication system is initializing. Please wait a moment and try again.');
+        } else {
+          setError(handleAuthError(error));
+        }
+      } else {
+        setError(handleAuthError(error));
+      }
+      
       setIsLoading(false);
     }
   }, [msalInstance, isMsalInitialized]);
@@ -291,6 +366,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setError(null);
   };
 
+  // Refresh token function that returns the new access token
+  const refreshToken = useCallback(async (): Promise<string | null> => {
+    if (!msalInstance || !isMsalInitialized) {
+      console.warn('MSAL instance not available for token refresh');
+      return null;
+    }
+
+    try {
+      console.log('Refreshing token via auth context...');
+      await refreshAuthToken();
+      console.log('Token refresh completed, current access token:', accessToken ? 'Available' : 'Not available');
+      return accessToken;
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      return null;
+    }
+  }, [msalInstance, isMsalInitialized, refreshAuthToken, accessToken]);
+
   // Prevent hydration mismatch by not rendering auth-dependent content on server
   if (!isClient) {
     return (
@@ -301,6 +394,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         user: null,
         authMethod: null,
         error: null,
+        msalInstance: null,
+        accessToken: null,
+        refreshToken: async () => null,
+        syncTokensFromStorage: () => {},
         loginWithVipps: async () => {},
         loginWithOTP: async () => {},
         logout: async () => {},
@@ -321,6 +418,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       user,
       authMethod,
       error,
+      msalInstance,
+      accessToken,
+      refreshToken,
+      syncTokensFromStorage,
       loginWithVipps,
       loginWithOTP,
       logout,

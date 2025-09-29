@@ -54,18 +54,43 @@ export const useMsal = () => {
         const redirectResponse = await msalInstance.handleRedirectPromise();
         if (redirectResponse) {
           console.log('Redirect response received:', redirectResponse);
+          // Store auth data for immediate use
+          localStorage.setItem('auth_authenticated', 'true');
+          localStorage.setItem('access_token', redirectResponse.accessToken);
+          localStorage.setItem('id_token', redirectResponse.idToken);
+          
+          // Store user profile data
+          if (redirectResponse.account) {
+            const userProfile = {
+              id: redirectResponse.account.homeAccountId,
+              username: redirectResponse.account.username,
+              name: redirectResponse.account.name || redirectResponse.account.username,
+              email: redirectResponse.account.username,
+              tenantId: redirectResponse.account.tenantId,
+              homeAccountId: redirectResponse.account.homeAccountId,
+              environment: redirectResponse.account.environment,
+            };
+            localStorage.setItem('auth_user', JSON.stringify(userProfile));
+            
+            // Determine auth method based on account
+            const authMethod = redirectResponse.account.username?.includes('@') ? 'otp' : 'vipps';
+            localStorage.setItem('auth_method', authMethod);
+          }
         }
         
         setInstance(msalInstance);
         setIsInitialized(true);
       } catch (error) {
         console.error('MSAL initialization error:', error);
+        // Reset initialization state on error
+        isInitializing = false;
       } finally {
         isInitializing = false;
       }
     };
 
     initializeMsal();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return { instance, isInitialized };

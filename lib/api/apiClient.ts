@@ -104,6 +104,7 @@ export class ApiClient {
   private config: ApiClientConfig;
   private msalInstance: PublicClientApplication | null = null;
   private loadingManager: LoadingManager;
+  private currentAccessToken: string | null = null;
 
   constructor(config: ApiClientConfig) {
     this.config = {
@@ -122,6 +123,28 @@ export class ApiClient {
   // Set MSAL instance (called from React hook)
   setMsalInstance(instance: PublicClientApplication) {
     this.msalInstance = instance;
+  }
+
+  // Set current access token (called from React hook)
+  setCurrentAccessToken(token: string | null) {
+    this.currentAccessToken = token;
+  }
+
+  // Validate if current token is still valid
+  private isTokenValid(token: string | null): boolean {
+    if (!token) return false;
+    
+    try {
+      // Decode JWT token to check expiration
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Math.floor(Date.now() / 1000);
+      const bufferTime = 300; // 5 minutes buffer
+      
+      return payload.exp && (payload.exp - bufferTime) > currentTime;
+    } catch (error) {
+      console.warn('Failed to validate token:', error);
+      return false;
+    }
   }
 
   // Get loading manager for external access
@@ -153,8 +176,16 @@ export class ApiClient {
 
       // Get token if authentication is required
       let accessToken: string | null = null;
-      if (requireAuth && this.msalInstance) {
-        accessToken = await this.getAccessTokenFromMsal();
+      if (requireAuth) {
+        // First try to use the current access token from the hook if it's valid
+        if (this.currentAccessToken && this.isTokenValid(this.currentAccessToken)) {
+          accessToken = this.currentAccessToken;
+          console.log('Using current valid access token from hook');
+        } else if (this.msalInstance) {
+          // Fallback to MSAL if no current token or token is invalid
+          console.log('Getting fresh token from MSAL');
+          accessToken = await this.getAccessTokenFromMsal();
+        }
       }
 
       // Prepare request headers (merge default headers with request headers)
@@ -187,9 +218,15 @@ export class ApiClient {
 
       if (!response.ok) {
         // Handle 401 - token might be expired, try to refresh
-        if (response.status === 401 && requireAuth && this.msalInstance) {
+        if (response.status === 401 && requireAuth) {
+          console.log('Received 401, attempting token refresh...');
+          
+          // Try to refresh using MSAL
           const refreshedToken = await this.refreshTokenFromMsal();
           if (refreshedToken) {
+            // Update current token
+            this.currentAccessToken = refreshedToken;
+            
             // Retry request with new token
             requestHeaders.Authorization = `Bearer ${refreshedToken}`;
             const retryResponse = await this.fetchWithTimeout(url, {
@@ -201,6 +238,8 @@ export class ApiClient {
               const retryData = await this.parseResponse(retryResponse);
               return this.createSuccessResponse<T>(retryData as T, retryResponse);
             }
+          } else {
+            console.warn('Token refresh failed, request will fail with 401');
           }
         }
 
@@ -223,45 +262,123 @@ export class ApiClient {
 
   // Get access token from MSAL
   private async getAccessTokenFromMsal(): Promise<string | null> {
-    if (!this.msalInstance) return null;
+    if (!this.msalInstance) {
+      console.warn('MSAL instance not available');
+      return null;
+    }
 
     try {
+      // Check if MSAL is properly initialized
       const accounts = this.msalInstance.getAllAccounts();
-      if (accounts.length === 0) return null;
+      if (accounts.length === 0) {
+        console.warn('No MSAL accounts found');
+        return null;
+      }
 
       const account = accounts[0];
+      
+      // Add a small delay to ensure MSAL is fully initialized
+      // This prevents endpoints_resolution_error
+      await new Promise(resolve => setTimeout(resolve, 200));
+
       const request = {
         ...tokenRequest,
         account: account,
+        scopes: tokenRequest.scopes.filter((scope): scope is string => scope !== undefined),
       };
 
+      console.log('Attempting to acquire token silently...');
       const response = await this.msalInstance.acquireTokenSilent(request);
+      console.log('Token acquired successfully');
+      
+      // Update the current access token
+      this.currentAccessToken = response.accessToken;
+      
       return response.accessToken;
     } catch (error) {
       console.error('Failed to get access token from MSAL:', error);
+      
+      // Handle specific MSAL errors
+      if (error && typeof error === 'object' && 'errorCode' in error) {
+        const errorCode = error.errorCode as string;
+        
+        if (errorCode === 'endpoints_resolution_error') {
+          console.warn('MSAL endpoints resolution error - instance may not be fully initialized');
+          return null;
+        }
+        
+        if (errorCode === 'interaction_required') {
+          console.warn('User interaction required for token acquisition');
+          return null;
+        }
+        
+        if (errorCode === 'consent_required') {
+          console.warn('Consent required for token acquisition');
+          return null;
+        }
+      }
+      
       return null;
     }
   }
 
   // Refresh token using MSAL
   private async refreshTokenFromMsal(): Promise<string | null> {
-    if (!this.msalInstance) return null;
+    if (!this.msalInstance) {
+      console.warn('MSAL instance not available for token refresh');
+      return null;
+    }
 
     try {
       const accounts = this.msalInstance.getAllAccounts();
-      if (accounts.length === 0) return null;
+      if (accounts.length === 0) {
+        console.warn('No MSAL accounts found for token refresh');
+        return null;
+      }
 
       const account = accounts[0];
+      
+      // Add a small delay to ensure MSAL is fully initialized
+      await new Promise(resolve => setTimeout(resolve, 200));
+
       const request = {
         ...tokenRequest,
         account: account,
+        scopes: tokenRequest.scopes.filter((scope): scope is string => scope !== undefined),
         forceRefresh: true, // Force refresh
       };
 
+      console.log('Attempting to refresh token...');
       const response = await this.msalInstance.acquireTokenSilent(request);
+      console.log('Token refreshed successfully');
+      
+      // Update the current access token
+      this.currentAccessToken = response.accessToken;
+      
       return response.accessToken;
     } catch (error) {
       console.error('Failed to refresh token from MSAL:', error);
+      
+      // Handle specific MSAL errors
+      if (error && typeof error === 'object' && 'errorCode' in error) {
+        const errorCode = error.errorCode as string;
+        
+        if (errorCode === 'endpoints_resolution_error') {
+          console.warn('MSAL endpoints resolution error during token refresh');
+          return null;
+        }
+        
+        if (errorCode === 'interaction_required') {
+          console.warn('User interaction required for token refresh');
+          return null;
+        }
+        
+        if (errorCode === 'consent_required') {
+          console.warn('Consent required for token refresh');
+          return null;
+        }
+      }
+      
       return null;
     }
   }
